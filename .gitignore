@@ -1,0 +1,33 @@
+# Build directories
+build/
+out/
+bin/
+lib/
+cmake-build-*/
+
+# Visual Studio / MSVC / Clangd
+.vs/
+.vscode/
+.cache/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# Compiled artifacts
+*.obj
+*.o
+*.a
+*.lib
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.ilk
+*.exp
