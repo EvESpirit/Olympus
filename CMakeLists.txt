@@ -29,6 +29,8 @@ add_library(olympus_codec_v24919 STATIC
     src/codec/v24919/bitstream.cpp
     src/codec/v24919/gcm_udp_header.cpp
     src/codec/v24919/jam_compact_codec.cpp
+    src/codec/v24919/jam_schema_db_generated.cpp
+    src/codec/v24919/jam_transport_framing.cpp
 )
 target_include_directories(olympus_codec_v24919 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
