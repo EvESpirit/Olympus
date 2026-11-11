@@ -17,6 +17,7 @@
    - Protocol-agnostic **Sparse-Set / Archetype ECS Core** ticking at a parameterized fixed timestep (default **`62.5 Hz` / `16.0 ms`**, scalable to `125 Hz` / `250 Hz`).
    - Owns authoritative movement validation (`Component_12` / `Component_15`), hybrid hit registration (`ClientInCombat` `0x61A8` / `0x61B1`), ability/sub-entity lifecycles, first-class server-owned Dummy Bots, and 64-tick circular delta compression.
 
+# This repository is brand-new. Features are being developed almost daily. Do not use this unless you already know what you're doing. For now.
 ---
 
 ## Building (Windows & Linux)
