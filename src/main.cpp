@@ -9,9 +9,13 @@ int main() {
     olympus::chiron::ChironServer chiron{};
 
     std::printf("[Olympus] Sovereign Dedicated Server Suite (Target: Overwatch 0.8.0.24919)\n");
-    std::printf("[Athena]  Control Plane configured on TCP+TLS %s:%u\n",
+    std::printf("[Athena]  Control Plane configured on BGS TCP+TLS %s:%u | JAM Lobby TCP %s:%u (Client JAMListener: %s:%u)\n",
                 athena.config().bind_address.c_str(),
-                athena.config().bgs_tls_port);
+                athena.config().bgs_tls_port,
+                athena.config().bind_address.c_str(),
+                athena.config().jam_lobby_port,
+                athena.config().client_jam_listener_host.c_str(),
+                athena.config().client_jam_listener_port);
     std::printf("[Chiron]  Simulation Plane configured on UDP %s:%u (Tickrate: %.1f Hz, dt = %.4fs)\n",
                 athena.config().chiron_public_ip.c_str(),
                 chiron.config().udp_port,

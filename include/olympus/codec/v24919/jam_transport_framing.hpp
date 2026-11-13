@@ -34,6 +34,44 @@ struct JAMTcpFrame {
     JAMTcpFrame& out_frame);
 
 // ------------------------------------------------------------------------------
+// 1b. Outer JAMConnection TCP Socket Framing (+0x1602E50: +0xE65610 Send / +0xE65750 Recv)
+//     Every JAMStream payload on TCP is prefixed with a 3-byte (24-bit Big-Endian)
+//     payload length: [ (len >> 16) & 0xFF, (len >> 8) & 0xFF, len & 0xFF ].
+// ------------------------------------------------------------------------------
+[[nodiscard]] std::vector<std::uint8_t> wrap_jam_tcp_socket_payload(
+    std::span<const std::uint8_t> inner_jam_stream);
+
+[[nodiscard]] std::vector<std::uint8_t> encode_jam_tcp_wire_packet(
+    const JAMTcpFrame& frame,
+    std::uint32_t pool_header_flags = 0u);
+
+class JAMTcpStreamAssembler {
+public:
+    void feed_bytes(std::span<const std::uint8_t> chunk);
+
+    // Extracts the next complete inner JAMStream payload if >= 3 + payload_len bytes are buffered.
+    [[nodiscard]] bool pop_raw_jam_stream(std::vector<std::uint8_t>& out_inner_stream);
+
+    // Extracts and decodes the next complete JAMTcpFrame.
+    [[nodiscard]] bool pop_frame(
+        JAMTcpFrame& out_frame,
+        std::uint32_t pool_header_flags = 0u);
+
+    [[nodiscard]] std::size_t buffered_bytes() const noexcept {
+        return buffer_.size() - read_offset_;
+    }
+
+    void clear() noexcept {
+        buffer_.clear();
+        read_offset_ = 0;
+    }
+
+private:
+    std::vector<std::uint8_t> buffer_;
+    std::size_t               read_offset_{0};
+};
+
+// ------------------------------------------------------------------------------
 // 2. UDP Sub-Channel 0: ClientJAMUDPSubChannel (+0x10504C0 & +0x1050DF0)
 //    Multiplexes the 8 Simulation Plane JAM Protocol Pools (pool_index 0..7)
 //    and manages reliable sequence numbers + channel_tokens[0] retransmission!

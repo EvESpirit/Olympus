@@ -67,6 +67,77 @@ bool decode_jam_tcp_frame(
     return reader.read_remaining_bytes(out_frame.compact_payload);
 }
 
+std::vector<std::uint8_t> wrap_jam_tcp_socket_payload(
+    std::span<const std::uint8_t> inner_jam_stream) {
+
+    const std::size_t len = inner_jam_stream.size();
+    std::vector<std::uint8_t> packet;
+    packet.reserve(3u + len);
+    packet.push_back(static_cast<std::uint8_t>((len >> 16u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((len >> 8u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>(len & 0xFFu));
+    packet.insert(packet.end(), inner_jam_stream.begin(), inner_jam_stream.end());
+    return packet;
+}
+
+std::vector<std::uint8_t> encode_jam_tcp_wire_packet(
+    const JAMTcpFrame& frame,
+    std::uint32_t pool_header_flags) {
+
+    const std::vector<std::uint8_t> inner = encode_jam_tcp_frame(frame, pool_header_flags);
+    return wrap_jam_tcp_socket_payload(inner);
+}
+
+void JAMTcpStreamAssembler::feed_bytes(std::span<const std::uint8_t> chunk) {
+    if (chunk.empty()) return;
+    if (read_offset_ > 0u && read_offset_ == buffer_.size()) {
+        buffer_.clear();
+        read_offset_ = 0u;
+    }
+    buffer_.insert(buffer_.end(), chunk.begin(), chunk.end());
+}
+
+bool JAMTcpStreamAssembler::pop_raw_jam_stream(std::vector<std::uint8_t>& out_inner_stream) {
+    const std::size_t avail = buffered_bytes();
+    if (avail < 3u) {
+        return false;
+    }
+
+    const std::uint8_t* hdr = buffer_.data() + read_offset_;
+    const std::size_t payload_len =
+        (static_cast<std::size_t>(hdr[0]) << 16u) |
+        (static_cast<std::size_t>(hdr[1]) << 8u)  |
+        static_cast<std::size_t>(hdr[2]);
+
+    if (avail < 3u + payload_len) {
+        return false;
+    }
+
+    const std::uint8_t* payload_begin = hdr + 3u;
+    out_inner_stream.assign(payload_begin, payload_begin + payload_len);
+    read_offset_ += 3u + payload_len;
+
+    if (read_offset_ == buffer_.size()) {
+        buffer_.clear();
+        read_offset_ = 0u;
+    } else if (read_offset_ >= 4096u && read_offset_ * 2u >= buffer_.size()) {
+        buffer_.erase(buffer_.begin(), buffer_.begin() + static_cast<std::ptrdiff_t>(read_offset_));
+        read_offset_ = 0u;
+    }
+    return true;
+}
+
+bool JAMTcpStreamAssembler::pop_frame(
+    JAMTcpFrame& out_frame,
+    std::uint32_t pool_header_flags) {
+
+    std::vector<std::uint8_t> inner;
+    if (!pop_raw_jam_stream(inner)) {
+        return false;
+    }
+    return decode_jam_tcp_frame(inner, pool_header_flags, out_frame);
+}
+
 // ------------------------------------------------------------------------------
 // JAMSubChannel0Tracker (+0x10504C0 / +0x1050DF0 / +0x10502F0 / +0x10503D0)
 // ------------------------------------------------------------------------------
